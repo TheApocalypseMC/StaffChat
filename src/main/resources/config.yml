@@ -1,0 +1,38 @@
+# =================== #
+#      StaffChat      #
+# =================== #
+
+# The format of the messages.
+# Variables: %color %channel %sender %message
+format: "&7[%color%channel&7]%color %sender: %message"
+
+# Whether or not to enable the helpop command of this plugin.
+enable-helpop: true
+helpop-color: "&6"
+# Permission to see helpop messages. Usually, you'd give this to staff.
+# The permission to use it is "staffchat.helpop"
+helpop-permission: "staffchat.helpop.view"
+
+# Set your channels below. Ops have access to all channels regardless of permission.
+# Also note that aliases are the commands that can be typed to activate the channel.
+channels:
+  owner:
+    permission: staffchat.owner
+    aliases: [ownerchat, oc, ownerc, owner]
+    color: "&4"
+  dev:
+    permission: staffchat.dev
+    aliases: [devchat, dc, devc, dev]
+    color: "&a"
+  admin:
+    permission: staffchat.admin
+    aliases: [adminchat, ac, adminc, admin]
+    color: "&d"
+  mod:
+    permission: staffchat.mod
+    aliases: [modchat, mc, modc, mod]
+    color: "&3"
+  global:
+    permission: staffchat.global
+    aliases: [globalchat, gc, globalc, global]
+    color: "&2"

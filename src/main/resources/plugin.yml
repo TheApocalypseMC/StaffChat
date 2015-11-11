@@ -1,0 +1,20 @@
+name: ${project.name}
+version: ${project.version}
+description: ${project.description}
+main: com.theapocalypsemc.staffchat.StaffChat
+author: SirFaizdat
+commands:
+  screload:
+    description: Reload StaffChat.
+    permission: staffchat.reload
+    aliases: [staffchatreload, scr]
+  helpop:
+    description: Ask a staff member for help.
+    permission: staffchat.helpop
+permissions:
+  staffchat.reload:
+    description: Access to /screload
+    default: op
+  staffchat.helpop:
+    description: Access to /helpop
+    default: true
