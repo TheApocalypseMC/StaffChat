@@ -44,9 +44,7 @@ public class ChatHandler implements Listener, PluginMessageListener {
         ByteArrayDataInput in = ByteStreams.newDataInput(message);
         String subchannel = in.readUTF();
         // Only read forwarded messages
-        if (subchannel.equals("Forward")) {
-            processIncomingMessage(in);
-        }
+        if (subchannel.equals("StaffChat")) processIncomingMessage(in);
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
@@ -114,21 +112,23 @@ public class ChatHandler implements Listener, PluginMessageListener {
      */
     private void processIncomingMessage(ByteArrayDataInput in) {
         // Store the header of the message, and then read the rest of it.
-        String chatChannel = in.readUTF(); // The chat channel that this is going to
         short len = in.readShort();
         byte[] msgbytes = new byte[len];
         in.readFully(msgbytes);
 
-        // Get the channel
-        Channel channel = plugin.getChannel(chatChannel);
-        if (channel == null) {
-            StaffChat.log("&cError: Tried to receive message from unregistered channel " + chatChannel + ". Ignored...");
-            return;
-        }
-
         try {
             // Get the input
             DataInputStream msgin = new DataInputStream(new ByteArrayInputStream(msgbytes));
+
+            // Get the channel
+            String chatChannel  = msgin.readUTF();
+            Channel channel = plugin.getChannel(chatChannel);
+            if (channel == null) {
+                StaffChat.log("&cError: Tried to receive message from unregistered channel " + chatChannel + ". Ignored...");
+                return;
+            }
+
+            // And the data
             String sender = msgin.readUTF();
             String message = msgin.readUTF();
 
@@ -166,11 +166,11 @@ public class ChatHandler implements Listener, PluginMessageListener {
         ByteArrayDataOutput out = ByteStreams.newDataOutput();
         out.writeUTF("Forward"); // So BungeeCord knows to forward it
         out.writeUTF("ALL"); // All servers
-        out.writeUTF(channel); // The channel this is being sent through
+        out.writeUTF("StaffChat");
 
         // Get the channel
         Channel channelObj = plugin.getChannel(channel);
-        if (channel == null) {
+        if (channelObj == null) {
             StaffChat.log("&cError: Tried to send message to unregistered channel " + channel + ". Ignored...");
             return;
         }
@@ -180,6 +180,7 @@ public class ChatHandler implements Listener, PluginMessageListener {
         // Write the data
         try {
             DataOutputStream msgout = new DataOutputStream(msgbytes);
+            msgout.writeUTF(channel);
             msgout.writeUTF(sender);
             msgout.writeUTF(message);
         } catch (IOException e) {
