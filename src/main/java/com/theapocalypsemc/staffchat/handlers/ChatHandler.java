@@ -29,7 +29,7 @@ import java.io.*;
  */
 public class ChatHandler implements Listener, PluginMessageListener {
 
-    StaffChat plugin;
+    private StaffChat plugin;
 
     public ChatHandler(StaffChat plugin) {
         this.plugin = plugin;
@@ -76,19 +76,22 @@ public class ChatHandler implements Listener, PluginMessageListener {
 
         // Get the message from the command by creating a substring.
         int indexToSplitAt = command.indexOf(" "); // Get the location of the first space
-        // If the command contains no arguments, the player wants to toggle.
+        // If the command contains no arguments, tell the player.
         if (indexToSplitAt == -1) {
-            // Disable the current channel if there is one
-            String playerCurrentChannel = plugin.getChatManager().getChannel(e.getPlayer().getName());
-            if (playerCurrentChannel != null) {
-                // Disable the current channel.
-                plugin.getChatManager().disable(e.getPlayer().getName());
+            e.getPlayer().sendMessage(StaffChat.color("&cYou must supply a message, or [off|on] to toggle."));
+            return;
+        }
 
-                // The player wants to toggle it off, so return
-                if (playerCurrentChannel.equals(channel)) {
-                    e.getPlayer().sendMessage(StaffChat.color("&cNo longer speaking in the the &4" + channel + " &cchannel."));
-                    return;
-                }
+        String message = command.substring(indexToSplitAt + 1);
+        String playerCurrentChannel = plugin.getChatManager().getChannel(e.getPlayer().getName());
+
+        if(message.toLowerCase().equals("off")) {
+            plugin.getChatManager().disable(e.getPlayer().getName());
+            e.getPlayer().sendMessage(StaffChat.color("&cNo longer speaking in the the &4" + channel + " &cchannel."));
+            return;
+        } else if(message.toLowerCase().equals("on")) {
+            if(playerCurrentChannel != null) {
+                plugin.getChatManager().disable(e.getPlayer().getName());
             }
 
             // Enable the new one
@@ -97,8 +100,6 @@ public class ChatHandler implements Listener, PluginMessageListener {
             e.getPlayer().sendMessage(StaffChat.color("&3Now speaking in the the &b" + channel + " &3channel."));
             return;
         }
-
-        String message = command.substring(indexToSplitAt + 1);
 
         // Send the message
         send(channel, e.getPlayer().getName(), message);
