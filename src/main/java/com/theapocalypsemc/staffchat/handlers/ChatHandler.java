@@ -10,6 +10,8 @@ import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
 import com.theapocalypsemc.staffchat.Channel;
 import com.theapocalypsemc.staffchat.StaffChat;
+import io.github.sirfaizdat.bridge.MessageListener;
+import io.github.sirfaizdat.bridge.common.MessagePacket;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -27,24 +29,19 @@ import java.io.*;
  *
  * @author SirFaizdat
  */
-public class ChatHandler implements Listener, PluginMessageListener {
+public class ChatHandler extends MessageListener implements Listener {
 
     private StaffChat plugin;
 
     public ChatHandler(StaffChat plugin) {
         this.plugin = plugin;
-        plugin.getServer().getMessenger().registerOutgoingPluginChannel(plugin, "BungeeCord");
-        plugin.getServer().getMessenger().registerIncomingPluginChannel(plugin, "BungeeCord", this);
     }
 
-    @Override
-    public void onPluginMessageReceived(String channel, Player player, byte[] message) {
-        if (!channel.equals("BungeeCord")) return; // Ignore non-Bungee messages
-
-        ByteArrayDataInput in = ByteStreams.newDataInput(message);
-        String subchannel = in.readUTF();
-        // Only read forwarded messages
-        if (subchannel.equals("StaffChat")) processIncomingMessage(in);
+    @Override public void onMessageReceived(MessagePacket messagePacket) {
+        if(messagePacket.commandName.equalsIgnoreCase("staffchat")) {
+            // This is our packet
+            processIncomingMessage(messagePacket);
+        }
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
@@ -109,36 +106,24 @@ public class ChatHandler implements Listener, PluginMessageListener {
      * Process the data from the plugin message, extract the needed variables,
      * and send the message to the players who can see it.
      *
-     * @param in The ByteArrayDataInput object provided by the listener.
+     * @param packet The {@link MessagePacket} object provided by the listener.
      */
-    private void processIncomingMessage(ByteArrayDataInput in) {
-        // Store the header of the message, and then read the rest of it.
-        short len = in.readShort();
-        byte[] msgbytes = new byte[len];
-        in.readFully(msgbytes);
-
-        try {
-            // Get the input
-            DataInputStream msgin = new DataInputStream(new ByteArrayInputStream(msgbytes));
-
-            // Get the channel
-            String chatChannel  = msgin.readUTF();
-            Channel channel = plugin.getChannel(chatChannel);
-            if (channel == null) {
-                StaffChat.log("&cError: Tried to receive message from unregistered channel " + chatChannel + ". Ignored...");
-                return;
-            }
-
-            // And the data
-            String sender = msgin.readUTF();
-            String message = msgin.readUTF();
-
-            // Send it!
-            formatAndBroadcast(channel, sender, message);
-
-        } catch (IOException e) {
-            e.printStackTrace();
+    private void processIncomingMessage(MessagePacket packet) {
+        // Get the channel
+        String chatChannel  = packet.args[0];
+        Channel channel = plugin.getChannel(chatChannel);
+        if (channel == null) {
+            StaffChat.log("&cError: Tried to receive message from unregistered channel " + chatChannel + ". Ignored...");
+            return;
         }
+
+        // And the data
+        String sender = packet.args[1];
+        String message = packet.args[2];
+
+        // Send it!
+        formatAndBroadcast(channel, sender, message);
+
     }
 
     private void formatAndBroadcast(Channel channel, String sender, String message) {
@@ -163,41 +148,16 @@ public class ChatHandler implements Listener, PluginMessageListener {
      * @param message The message contents. Leave all color codes unformatted.
      */
     public void send(String channel, String sender, String message) {
-        // Write the header
-        ByteArrayDataOutput out = ByteStreams.newDataOutput();
-        out.writeUTF("Forward"); // So BungeeCord knows to forward it
-        out.writeUTF("ALL"); // All servers
-        out.writeUTF("StaffChat");
+        MessagePacket packet = new MessagePacket(
+            "staffchat",
+            "all",
+            new String[]{
+                channel,
+                sender,
+                message
+            }
+        );
 
-        // Get the channel
-        Channel channelObj = plugin.getChannel(channel);
-        if (channelObj == null) {
-            StaffChat.log("&cError: Tried to send message to unregistered channel " + channel + ". Ignored...");
-            return;
-        }
-
-        ByteArrayOutputStream msgbytes = new ByteArrayOutputStream();
-
-        // Write the data
-        try {
-            DataOutputStream msgout = new DataOutputStream(msgbytes);
-            msgout.writeUTF(channel);
-            msgout.writeUTF(sender);
-            msgout.writeUTF(message);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        // Finalize
-        out.writeShort(msgbytes.toByteArray().length);
-        out.write(msgbytes.toByteArray());
-
-        // Send the message to any player on the other server - it doesn't matter
-        Player player = Iterables.getFirst(Bukkit.getOnlinePlayers(), null);
-        if (player == null) return;
-        player.sendPluginMessage(plugin, "BungeeCord", out.toByteArray());
-
-        // Send to everyone on this server as well.
-        formatAndBroadcast(channelObj, sender, message);
+        send(packet);
     }
 }

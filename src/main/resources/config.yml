@@ -2,6 +2,9 @@
 #      StaffChat      #
 # =================== #
 
+# Bridge setup
+server-name: server
+
 # The format of the messages.
 # Variables: %color %channel %sender %message
 format: "&7[%color%channel&7]%color %sender: %message"

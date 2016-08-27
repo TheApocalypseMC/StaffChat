@@ -6,6 +6,7 @@ package com.theapocalypsemc.staffchat;
 
 import com.theapocalypsemc.staffchat.executors.HelpopExecutor;
 import com.theapocalypsemc.staffchat.handlers.ChatHandler;
+import io.github.sirfaizdat.bridge.BridgeSpigot;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
@@ -32,6 +33,7 @@ public class StaffChat extends JavaPlugin {
 
     public void onEnable() {
         this.saveDefaultConfig();
+        BridgeSpigot.getInstance().setServerNameIfNotSet(getConfig().getString("server-name"));
 
         reload(); // Reload in this case just means load.
 
