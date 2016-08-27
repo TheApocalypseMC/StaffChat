@@ -38,6 +38,7 @@ public class StaffChat extends JavaPlugin {
         reload(); // Reload in this case just means load.
 
         // Register with the server
+        BridgeSpigot.getInstance().addListener(chatHandler);
         getServer().getPluginManager().registerEvents(chatHandler, this);
 
         // Register commands
